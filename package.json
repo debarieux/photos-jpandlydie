@@ -1,0 +1,12 @@
+{
+  "name": "wedding-photo-upload",
+  "version": "1.0.0",
+  "description": "Page d'upload de photos de mariage",
+  "main": "index.html",
+  "scripts": {
+    "install": "npm install"
+  },
+  "dependencies": {
+    "imagekit": "^4.1.3"
+  }
+}
