@@ -1,7 +1,0 @@
-# Ignorer les dépendances locales, elles seront installées par Netlify
-node_modules
-
-# Ignorer les configurations d'autres plateformes et locales
-.next
-.vercel
-windsurf_deployment.yaml
