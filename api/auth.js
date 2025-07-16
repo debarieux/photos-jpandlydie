@@ -6,9 +6,9 @@ const ImageKit = require('imagekit');
 // N'exposez JAMAIS votre clé privée côté client.
 // Idéalement, utilisez des variables d'environnement pour ces clés.
 const imagekit = new ImageKit({
-    publicKey: "public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=",
-    privateKey: "private_93pE8T8UYsOcrc0qPBZy2cLkYLA=",
-    urlEndpoint: "https://ik.imagekit.io/mvhberuj5"
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
 });
 
 // Exemple pour une fonction serverless type Vercel
