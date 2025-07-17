@@ -6,6 +6,14 @@
     <title>Mariage de Lydie & Jean-Philippe</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Configuration des variables d'environnement côté client
+        window.ENV = {
+            IMAGEKIT_PUBLIC_KEY: "public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=",
+            IMAGEKIT_URL_ENDPOINT: "https://ik.imagekit.io/mvhberuj5",
+            AUTH_ENDPOINT: "/api/auth"
+        };
+    </script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {

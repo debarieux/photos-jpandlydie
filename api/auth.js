@@ -11,15 +11,34 @@ const imagekit = new ImageKit({
     urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
 });
 
+// Configuration CORS sécurisée
+const allowedOrigins = [
+    'https://photos-jpandlydie.vercel.app',
+    'https://mariage-photos-ppke.vercel.app',
+    'http://localhost:3002'
+];
+
 // Exemple pour une fonction serverless type Vercel
 module.exports = (req, res) => {
-    // Permettre les requêtes depuis n'importe quelle origine (à restreindre en production)
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    // Vérifier l'origine de la requête
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
+    // En-têtes de sécurité
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 heures
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: https://ik.imagekit.io; connect-src 'self' https://ik.imagekit.io;");
 
+    // Répondre immédiatement aux requêtes OPTIONS (prévol)
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        return res.status(204).end();
     }
 
     try {

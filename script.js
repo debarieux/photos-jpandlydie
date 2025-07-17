@@ -1,9 +1,8 @@
 // --- Configuration ImageKit.io ---
-const publicKey = "public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=";
-const urlEndpoint = "https://ik.imagekit.io/mvhberuj5";
-// L'URL de votre fonction serverless qui exécute api/auth.js
-// Pour un test local, cela pourrait être différent. Pour le déploiement, ce sera l'URL fournie par l'hébergeur.
-const authenticationEndpoint = 'https://mariage-photos-ppke.vercel.app/api/auth';
+const publicKey = window.ENV?.IMAGEKIT_PUBLIC_KEY || "public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=";
+const urlEndpoint = window.ENV?.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/mvhberuj5";
+// L'URL de l'API d'authentification est définie côté serveur
+const authenticationEndpoint = window.ENV?.AUTH_ENDPOINT || 'https://photos-jpandlydie.vercel.app/api/auth';
 
 // --- DOM Elements ---
 document.addEventListener('DOMContentLoaded', () => {
