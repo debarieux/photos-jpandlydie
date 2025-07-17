@@ -2,11 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "simple-server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/*.js",
+      "src": "api/auth.js",
       "use": "@vercel/node"
     },
     {
@@ -29,15 +25,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/index.html"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  }
+  ]
 }

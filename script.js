@@ -94,6 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function uploadFiles(files) {
         console.log("Début de l'upload de", files.length, "fichiers vers ImageKit.io.");
+        console.log("Endpoint d'authentification:", authenticationEndpoint);
+        console.log("Clé publique:", publicKey ? 'Définie' : 'Non définie');
 
         fileListContainer.innerHTML += `<div class="mt-4 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
             <div id="progress-bar" class="bg-orange-500 h-2.5 rounded-full" style="width: 0%"></div>
@@ -102,32 +104,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // 1. Obtenir la signature du backend
-            const authResponse = await fetch(authenticationEndpoint);
+            console.log("Tentative de connexion à l'API d'authentification...");
+            const authResponse = await fetch(authenticationEndpoint, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            console.log("Réponse de l'API d'authentification:", {
+                status: authResponse.status,
+                statusText: authResponse.statusText,
+                ok: authResponse.ok
+            });
+
             if (!authResponse.ok) {
-                throw new Error(`Erreur d'authentification: ${authResponse.statusText}`);
+                const errorText = await authResponse.text();
+                console.error("Erreur complète de l'API:", errorText);
+                throw new Error(`Erreur d'authentification (${authResponse.status}): ${authResponse.statusText}`);
             }
-            const { signature, expire, token } = await authResponse.json();
+
+            const authData = await authResponse.json();
+            console.log("Données d'authentification reçues:", authData);
+            
+            const { signature, expire, token } = authData;
+            if (!signature || !expire || !token) {
+                throw new Error("Données d'authentification incomplètes");
+            }
 
             const filesArray = Array.from(files);
             let totalUploaded = 0;
 
             // Uploader chaque fichier individuellement
             for (const file of filesArray) {
+                console.log("Préparation de l'upload du fichier:", file.name, "(taille:", file.size, "octets)");
+                
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('fileName', file.name);
+                formData.append('fileName', `mariage-jp-lydie/${Date.now()}-${file.name}`); // Dossier spécifique
+                formData.append('useUniqueFileName', 'true');
                 formData.append('publicKey', publicKey);
                 formData.append('signature', signature);
                 formData.append('expire', expire);
                 formData.append('token', token);
 
+                console.log("Envoi du fichier vers ImageKit...");
                 const uploadResponse = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
                     method: 'POST',
                     body: formData
                 });
 
+                const responseData = await uploadResponse.json();
+                console.log("Réponse d'ImageKit:", responseData);
+
                 if (!uploadResponse.ok) {
-                    console.error(`Erreur lors de l'upload de ${file.name}:`, await uploadResponse.json());
+                    console.error(`Erreur lors de l'upload de ${file.name}:`, responseData);
                     continue; // Passe au fichier suivant en cas d'erreur
                 }
 
