@@ -2,6 +2,7 @@
 const UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload';
 const FOLDER_NAME = 'mariage-jp-lydie';
 const AUTH_ENDPOINT = '/api/auth';
+const IMAGEKIT_ID = 'mvhberuj5';
 
 // Attente du chargement complet du DOM
 document.addEventListener('DOMContentLoaded', () => {
@@ -225,6 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('file', file);
         formData.append('fileName', `${FOLDER_NAME}/${Date.now()}-${file.name}`);
         formData.append('useUniqueFileName', 'true');
+        formData.append('folder', FOLDER_NAME);
+        formData.append('publicKey', window.ENV?.IMAGEKIT_PUBLIC_KEY || '');
         
         return formData;
     }
