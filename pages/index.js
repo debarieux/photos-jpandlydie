@@ -100,7 +100,7 @@ function FloatingHearts({ show }) {
   );
 }
 
-export default function Home() {
+function Home() {
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -314,7 +314,7 @@ export default function Home() {
   }, [files]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-pink-50">
+    <div className="min-h-screen bg-gradient-bg flex items-center justify-center p-4 sm:p-6">
       <Head>
         <title>Partage de photos - Mariage de Jean-Philippe & Lydia</title>
         <meta name="description" content="Partagez vos plus beaux moments de notre mariage" />
@@ -324,195 +324,194 @@ export default function Home() {
       <FlyingBirds count={8} />
       <FloatingHearts show={showSuccess} />
 
-      <main className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-cursive text-pink-600 mb-4">
-            Partagez vos plus beaux moments
-          </h1>
-          <p className="text-xl text-gray-600">
-            Téléchargez vos photos préférées de notre journée de mariage
-          </p>
-        </div>
-
-        {/* Zone de dépôt */}
-        <div
-          ref={dropZoneRef}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
-            isDragging ? 'border-pink-400 bg-pink-50' : 'border-pink-200 hover:border-pink-300'
-          } mb-8`}
-        >
-          <div className="max-w-md mx-auto">
-            <svg
-              className="w-16 h-16 mx-auto text-pink-400 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              ></path>
-            </svg>
-            <h2 className="text-xl font-medium text-gray-700 mb-2">
-              {isDragging ? 'Déposez vos photos ici' : 'Glissez-déposez vos photos ici'}
-            </h2>
-            <p className="text-gray-500 mb-4">ou</p>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-6 py-2 bg-pink-600 text-white rounded-full hover:bg-pink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
-            >
-              Sélectionner des fichiers
-            </button>
-            <p className="text-sm text-gray-500 mt-3">
-              Formats acceptés : JPG, PNG, HEIC (max 10 Mo par fichier)
+      <div className="w-full max-w-md">
+        <div className="card w-full bg-white rounded-2xl shadow-card overflow-hidden">
+          {/* En-tête avec le titre */}
+          <div className="py-8 sm:py-12 px-4 sm:px-8 text-center bg-gradient-to-b from-orange-50 to-white">
+            <div className="mb-2">
+              <h1 className="text-3xl sm:text-4xl font-parisienne text-orange-800 leading-none">Lydie</h1>
+              <div className="text-orange-500 text-2xl sm:text-3xl font-parisienne -mt-2 mb-1">&</div>
+              <h1 className="text-3xl sm:text-4xl font-parisienne text-orange-800 leading-none">Jean-Philippe</h1>
+            </div>
+            <div className="relative mt-8 mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-orange-200"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-4 bg-white text-orange-700 font-parisienne text-base sm:text-lg">
+                  Partagez vos plus beaux moments avec nous
+                </span>
+              </div>
+            </div>
+            <p className="text-orange-600 font-cormorant italic text-sm sm:text-base text-center mt-2">
+              Déposez ici vos moments de bonheur partagé
             </p>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/heic"
-            multiple
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-        </div>
 
-        {/* Liste des fichiers */}
-        {files.length > 0 && (
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-800">
-                {files.length} {files.length === 1 ? 'fichier sélectionné' : 'fichiers sélectionnés'}
-              </h2>
-            </div>
-            <ul className="divide-y divide-gray-200">
-              {files.map((file, index) => (
-                <li key={index} className="p-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-12 w-12 rounded-md overflow-hidden bg-gray-100">
-                      {file.preview && (
-                        <img
-                          src={file.preview}
-                          alt={file.name}
-                          className="h-full w-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="ml-4 flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {file.name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {formatFileSize(file.size)}
-                      </p>
-                      {file.status === 'uploading' && (
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                          <div
-                            className="bg-pink-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${file.progress}%` }}
-                          ></div>
-                        </div>
-                      )}
-                      {file.status === 'done' && (
-                        <p className="text-sm text-green-600 mt-1">
-                          ✓ Téléversement réussi
-                        </p>
-                      )}
-                      {file.status === 'error' && (
-                        <p className="text-sm text-red-600 mt-1">
-                          ✗ Erreur: {file.error || 'Échec du téléversement'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
-              <button
-                type="button"
-                onClick={() => uploadFiles(files.filter(f => f.status !== 'done'))}
-                disabled={isUploading || files.every(f => f.status === 'done')}
-                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
-                  isUploading || files.every(f => f.status === 'done')
-                    ? 'bg-pink-300 cursor-not-allowed'
-                    : 'bg-pink-600 hover:bg-pink-700'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500`}
-              >
-                {isUploading ? 'Téléversement en cours...' : 'Téléverser les fichiers'}
-              </button>
+          <div className="p-4 sm:p-6 md:p-8">
+            {/* Zone de dépôt */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`drop-zone rounded-xl p-6 sm:p-8 md:p-12 text-center cursor-pointer mb-6 sm:mb-8 transition-all duration-200 ${
+                isDragging ? 'border-2 border-orange-400 bg-orange-50' : 'border-2 border-dashed border-orange-200 hover:border-orange-300 bg-white'
+              }`}
+            >
+              <div className="max-w-xs mx-auto">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <svg
+                    className="w-8 h-8 sm:w-10 sm:h-10 text-orange-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-parisienne text-orange-800 mb-2">
+                  {isDragging ? 'Déposez vos photos ici' : 'Ajoutez vos photos'}
+                </h3>
+                <p className="text-orange-500 mb-4 font-cormorant">Glissez et déposez vos fichiers ici ou</p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-gradient-button text-white font-cormorant text-lg px-6 py-2 rounded-full shadow-button hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-offset-2"
+                >
+                  Sélectionner des fichiers
+                </button>
+                <p className="text-sm text-orange-600 mt-4 font-cormorant">
+                  Formats acceptés : JPG, PNG, HEIC (max 10 Mo par fichier)
+                </p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/heic"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+              />
             </div>
           </div>
-        )}
+
+          {/* Liste des fichiers */}
+          {files.length > 0 && (
+            <div className="px-4 sm:px-6 pb-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border border-apricot-100">
+                <div className="p-4 border-b border-apricot-100 bg-gradient-to-r from-warm-50 to-white">
+                  <h2 className="text-lg font-medium text-apricot-800 font-cormorant">
+                    {files.length} {files.length === 1 ? 'fichier sélectionné' : 'fichiers sélectionnés'}
+                  </h2>
+                </div>
+                <ul className="divide-y divide-apricot-100">
+                  {files.map((file, index) => (
+                    <li key={index} className="p-4 hover:bg-warm-50/50 transition-colors">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden bg-warm-100 border border-apricot-100">
+                          {file.preview && (
+                            <img
+                              src={file.preview}
+                              alt={file.name}
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="ml-4 flex-1 min-w-0">
+                          <p className="text-sm font-medium text-apricot-900 truncate font-cormorant">
+                            {file.name}
+                          </p>
+                          <p className="text-sm text-apricot-700 font-cormorant">
+                            {formatFileSize(file.size)}
+                          </p>
+                          {file.status === 'uploading' && (
+                            <div className="w-full bg-warm-200 rounded-full h-2 mt-2 overflow-hidden">
+                              <div
+                                className="bg-gradient-to-r from-apricot-400 to-apricot-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${file.progress}%` }}
+                              ></div>
+                            </div>
+                          )}
+                          {file.status === 'done' && (
+                            <p className="text-sm text-green-600 mt-1">
+                              ✓ Téléversement réussi
+                            </p>
+                          )}
+                          {file.status === 'error' && (
+                            <p className="text-sm text-red-600 mt-1">
+                              ✗ Erreur: {file.error || 'Échec du téléversement'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
+                  <button
+                    type="button"
+                    onClick={() => uploadFiles(files.filter(f => f.status !== 'done'))}
+                    disabled={isUploading || files.every(f => f.status === 'done')}
+                    className={`inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-cormorant text-lg rounded-full text-white ${
+                      isUploading || files.every(f => f.status === 'done')
+                        ? 'bg-apricot-300 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-apricot-500 to-apricot-600 hover:from-apricot-600 hover:to-apricot-700'
+                    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-apricot-300 transition-all duration-300`}
+                  >
+                    {isUploading ? 'Téléversement en cours...' : 'Téléverser les fichiers'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Message de succès */}
         {showSuccess && (
-          <div className="fixed bottom-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            <p>Vos photos ont été téléversées avec succès ! Merci pour votre partage.</p>
+          <div className="fixed bottom-6 right-6 bg-white/90 backdrop-blur-sm border-2 border-green-200 text-green-800 px-6 py-4 rounded-xl shadow-xl max-w-sm transition-all duration-300 transform hover:scale-105">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 h-6 w-6 text-green-500">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-cormorant font-medium">Vos photos ont été téléversées avec succès !</p>
+                <p className="text-xs text-green-700 mt-1">Merci pour votre partage précieux.</p>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Message d'erreur */}
         {error && (
-          <div className="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <p>{error}</p>
-            <button 
-              onClick={() => setError(null)}
-              className="font-bold float-right"
-            >
-              ×
-            </button>
+          <div className="fixed bottom-6 right-6 bg-white/90 backdrop-blur-sm border-2 border-red-200 text-red-800 px-6 py-4 rounded-xl shadow-xl max-w-sm transition-all duration-300 transform hover:scale-105">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <p className="text-sm font-cormorant font-medium">Une erreur est survenue</p>
+                <p className="text-xs text-red-700 mt-1">{error}</p>
+              </div>
+              <button 
+                onClick={() => setError(null)}
+                className="ml-4 text-red-500 hover:text-red-700 focus:outline-none"
+                aria-label="Fermer"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
-      </main>
-
-      <style jsx global>{`
-        @keyframes flyAcross {
-          0% {
-            transform: translateX(-100px) scaleX(var(--direction, 1));
-          }
-          100% {
-            transform: translateX(calc(100vw + 100px)) scaleX(var(--direction, 1));
-          }
-        }
-        
-        @keyframes float {
-          0% {
-            transform: translateY(100%) translateX(0);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.8;
-          }
-          90% {
-            opacity: 0.8;
-          }
-          100% {
-            transform: translateY(-100vh) translateX(20px);
-            opacity: 0;
-          }
-        }
-        
-        .animate-flyAcross {
-          animation: flyAcross 20s linear infinite;
-          --direction: 1;
-        }
-        
-        .animate-float {
-          animation: float 3s ease-in-out forwards;
-        }
-        
-        .font-cursive {
-          font-family: 'Parisienne', cursive;
-        }
-      `}</style>
+      </div>
     </div>
   );
 }
+
+export default Home;
