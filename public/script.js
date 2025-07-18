@@ -1,7 +1,7 @@
 // Configuration d'ImageKit.io
-const PUBLIC_KEY = "public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=";
 const UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload';
 const FOLDER_NAME = 'mariage-jp-lydie';
+const AUTH_ENDPOINT = '/api/auth';
 
 // Attente du chargement complet du DOM
 document.addEventListener('DOMContentLoaded', () => {
@@ -128,54 +128,104 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalSize = filesArray.reduce((acc, file) => acc + file.size, 0);
         let uploadedSize = 0;
 
+        console.log('Début de l\'upload de', filesArray.length, 'fichier(s)');
+        console.log('Taille totale à uploader:', formatFileSize(totalSize));
+
         // Affiche la barre de progression
         elements.progressBar.style.width = '0%';
         elements.progressText.textContent = '0%';
 
         try {
             for (const [index, file] of filesArray.entries()) {
-                console.log(`Traitement du fichier ${index + 1}/${filesArray.length}: ${file.name}`);
+                const fileNumber = index + 1;
+                console.log(`[${fileNumber}/${filesArray.length}] Traitement du fichier: ${file.name} (${formatFileSize(file.size)})`);
                 
-                const formData = createFormData(file);
-                await uploadFile(formData, index, (loaded, total) => {
-                    // Mise à jour de la progression pour ce fichier
-                    const fileProgress = Math.round((loaded / total) * 100);
-                    const fileProgressBar = document.getElementById(`file-progress-${index}`);
-                    const fileProgressText = document.getElementById(`progress-text-${index}`);
-                    
-                    if (fileProgressBar) fileProgressBar.style.width = `${fileProgress}%`;
-                    if (fileProgressText) fileProgressText.textContent = `${fileProgress}%`;
-                    
-                    // Mise à jour de la progression globale
-                    uploadedSize = filesArray
-                        .slice(0, index)
-                        .reduce((acc, _, i) => acc + filesArray[i].size, 0) + loaded;
-                    
-                    const globalProgress = Math.round((uploadedSize / totalSize) * 100);
-                    updateProgress(globalProgress);
-                });
+                // Mise à jour de l'interface utilisateur
+                const fileItem = document.querySelector(`[data-file-name="${file.name}"]`);
+                if (fileItem) {
+                    const statusElement = fileItem.querySelector('.file-status');
+                    if (statusElement) {
+                        statusElement.textContent = 'Envoi en cours...';
+                    }
+                }
                 
-                // Met à jour la progression pour les fichiers terminés
-                totalUploaded++;
-                updateProgress(Math.round((totalUploaded / filesArray.length) * 100));
+                try {
+                    console.log(`[${fileNumber}/${filesArray.length}] Préparation de l'upload...`);
+                    const formData = await createFormData(file);
+                    console.log(`[${fileNumber}/${filesArray.length}] Début de l'upload...`);
+                    
+                    await uploadFile(formData, index, (loaded, total) => {
+                        // Mise à jour de la progression pour ce fichier
+                        const fileProgress = Math.round((loaded / total) * 100);
+                        const fileProgressBar = document.getElementById(`file-progress-${index}`);
+                        const fileProgressText = document.getElementById(`progress-text-${index}`);
+                        
+                        if (fileProgressBar) fileProgressBar.style.width = `${fileProgress}%`;
+                        if (fileProgressText) fileProgressText.textContent = `${fileProgress}%`;
+                        
+                        // Mise à jour de la progression globale
+                        uploadedSize = filesArray
+                            .slice(0, index)
+                            .reduce((acc, _, i) => acc + filesArray[i].size, 0) + loaded;
+                    
+                        const globalProgress = Math.round((uploadedSize / totalSize) * 100);
+                        updateProgress(globalProgress);
+                    });
+                    
+                    totalUploaded++;
+                    console.log(`[${fileNumber}/${filesArray.length}] Fichier uploadé avec succès`);
+                    
+                } catch (error) {
+                    console.error(`[${fileNumber}/${filesArray.length}] Erreur lors de l'upload:`, error);
+                    const errorMessage = error.message || "Erreur inconnue";
+                    showError(`Erreur lors de l'upload de ${file.name}: ${errorMessage}`);
+                    
+                    // On continue avec les fichiers suivants même en cas d'erreur
+                    continue;
+                }
             }
-
-            // Affiche le message de confirmation
-            showConfirmation();
+            
+            if (totalUploaded === filesArray.length) {
+                showConfirmation();
+            } else {
+                showError(`${totalUploaded} fichier(s) sur ${filesArray.length} ont été uploadés avec succès.`);
+            }
             
         } catch (error) {
-            console.error("Erreur lors de l'upload:", error);
-            showError(error.message);
+            console.error("Erreur lors de l'upload des fichiers:", error);
+            showError("Une erreur inattendue est survenue lors de l'upload des fichiers.");
+        }
+    }
+
+    // Récupère les paramètres d'authentification depuis le serveur
+    async function getAuthParams() {
+        try {
+            const response = await fetch(AUTH_ENDPOINT);
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des paramètres d\'authentification');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Erreur d\'authentification:', error);
+            throw error;
         }
     }
 
     // Crée un objet FormData pour l'upload
-    function createFormData(file) {
+    async function createFormData(file) {
+        const authParams = await getAuthParams();
         const formData = new FormData();
+        
+        // Ajout des paramètres d'authentification
+        Object.keys(authParams).forEach(key => {
+            formData.append(key, authParams[key]);
+        });
+        
+        // Ajout des paramètres du fichier
         formData.append('file', file);
         formData.append('fileName', `${FOLDER_NAME}/${Date.now()}-${file.name}`);
         formData.append('useUniqueFileName', 'true');
-        formData.append('publicKey', PUBLIC_KEY);
+        
         return formData;
     }
 
@@ -191,20 +241,57 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             xhr.onload = () => {
+                console.log('Réponse du serveur:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    response: xhr.responseText
+                });
+                
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(JSON.parse(xhr.responseText));
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        console.log('Upload réussi:', response);
+                        resolve(response);
+                    } catch (e) {
+                        console.error('Erreur lors du parsing de la réponse:', e);
+                        reject(new Error('Réponse du serveur invalide'));
+                    }
                 } else {
-                    const error = new Error('Échec de l\'upload');
+                    let errorMessage = `Échec de l'upload (${xhr.status})`;
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMessage = errorResponse.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = xhr.responseText || errorMessage;
+                    }
+                    console.error(errorMessage);
+                    const error = new Error(errorMessage);
+                    error.status = xhr.status;
                     error.response = xhr.responseText;
                     reject(error);
                 }
             };
             
             xhr.onerror = () => {
-                reject(new Error('Erreur réseau lors de l\'upload'));
+                const error = new Error('Erreur réseau lors de l\'upload');
+                console.error('Erreur réseau:', error);
+                reject(error);
+            };
+
+            xhr.ontimeout = () => {
+                const error = new Error('Délai d\'attente dépassé lors de l\'upload');
+                console.error('Timeout:', error);
+                reject(error);
             };
             
+            console.log('Début de l\'upload vers:', UPLOAD_URL);
             xhr.open('POST', UPLOAD_URL, true);
+            xhr.timeout = 60000; // 60 secondes de timeout
+            
+            // Ajout d'un en-tête pour le suivi
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            
+            // Envoi du formulaire
             xhr.send(formData);
         });
     }

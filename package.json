@@ -3,17 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "node simple-server.js",
-    "start": "node simple-server.js"
+    "dev": "vercel dev",
+    "start": "vercel start",
+    "build": "vercel build",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
-    "express": "^5.1.0",
     "imagekit": "^4.1.3"
+  },
+  "devDependencies": {
+    "vercel": "^28.0.0",
+    "live-server": "^1.2.2"
   },
   "engines": {
     "node": ">=14.x"
   },
-  "main": "simple-server.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/debarieux/mariage-photos.git"
@@ -25,8 +29,5 @@
     "url": "https://github.com/debarieux/mariage-photos/issues"
   },
   "homepage": "https://github.com/debarieux/mariage-photos#readme",
-  "description": "",
-  "devDependencies": {
-    "live-server": "^1.2.2"
-  }
+  "description": ""
 }
