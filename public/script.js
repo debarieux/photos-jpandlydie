@@ -201,14 +201,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // Récupère les paramètres d'authentification depuis le serveur
     async function getAuthParams() {
         try {
-            const response = await fetch(AUTH_ENDPOINT);
+            console.log('Tentative de récupération des paramètres d\'authentification depuis:', AUTH_ENDPOINT);
+            const response = await fetch(AUTH_ENDPOINT, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                cache: 'no-cache'
+            });
+            
+            console.log('Réponse du serveur:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+            
             if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des paramètres d\'authentification');
+                const errorText = await response.text();
+                console.error('Erreur de réponse:', errorText);
+                throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
             }
-            return await response.json();
+            
+            const data = await response.json();
+            console.log('Paramètres d\'authentification reçus:', data);
+            return data;
+            
         } catch (error) {
-            console.error('Erreur d\'authentification:', error);
-            throw error;
+            console.error('Erreur lors de la récupération des paramètres d\'authentification:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
+            throw new Error(`Impossible de se connecter au serveur d'authentification: ${error.message}`);
         }
     }
 
