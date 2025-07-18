@@ -1,5 +1,26 @@
+import { useEffect } from 'react';
 import '../styles/globals.css';
+import Head from 'next/head';
 
 export default function MyApp({ Component, pageProps }) {
-  return <Component {...pageProps} />;
+  // Configuration d'ImageKit
+  useEffect(() => {
+    window.ENV = {
+      IMAGEKIT_PUBLIC_KEY: "public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=",
+      IMAGEKIT_URL_ENDPOINT: "https://ik.imagekit.io/mvhberuj5"
+    };
+  }, []);
+
+  return (
+    <>
+      <Head>
+        <title>Mariage Lydie & Jean-Philippe</title>
+        <meta name="description" content="Partagez vos plus beaux moments de notre mariage" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+        <link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet" />
+      </Head>
+      <Component {...pageProps} />
+    </>
+  );
 }
