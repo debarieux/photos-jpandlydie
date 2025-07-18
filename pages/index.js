@@ -1,19 +1,23 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from 'react';
+import Head from 'next/head';
 
-// Génère des oiseaux SVG qui volent
+// Configuration d'ImageKit.io
+const UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload';
+const FOLDER_NAME = 'mariage-jp-lydie';
+const AUTH_ENDPOINT = '/api/auth';
+
+// Composant pour les oiseaux volants
 function FlyingBirds({ count = 10 }) {
   const birds = Array.from({ length: count });
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       {birds.map((_, i) => {
-        // Trajectoire et style aléatoire
         const top = 10 + Math.random() * 80;
         const duration = 12 + Math.random() * 8;
         const delay = Math.random() * 10;
         const size = 25 + Math.random() * 20;
-        const color = ['#f8b195', '#fbbf24', '#fffbe6'][Math.floor(Math.random() * 3)];
         const opacity = 0.6 + Math.random() * 0.4;
-        const direction = Math.random() > 0.5 ? 1 : -1; // 1 pour L -> R, -1 pour R -> L
+        const direction = Math.random() > 0.5 ? 1 : -1;
 
         return (
           <svg
@@ -27,17 +31,22 @@ function FlyingBirds({ count = 10 }) {
               animationDuration: `${duration}s`,
               animationDelay: `${delay}s`,
               opacity,
-              transform: `scaleX(${direction})` // Inverse le SVG pour changer de direction
+              transform: `scaleX(${direction})`
             }}
-            viewBox="0 0 50 32"
+            viewBox="0 0 24 24"
             fill="none"
-            stroke={color}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M2.2,16.4C2.2,16.4,6.1,13,10.5,13c4,0,6.5,3.5,10.2,3.5c3.7,0,6.8-4.2,10.8-4.2c4,0,6.2,3.2,9.8,3.2c3.6,0,4.9-2.5,4.9-2.5" />
-            <path d="M2.2,20.4C2.2,20.4,6.1,17,10.5,17c4,0,6.5,3.5,10.2,3.5c3.7,0,6.8-4.2,10.8-4.2c4,0,6.2,3.2,9.8,3.2c3.6,0,4.9-2.5,4.9-2.5" />
+            <path
+              d="M23 3.75C23 3.75 21 7 16.5 7C15.5 7 14.5 6.5 14 6C13.5 5.5 13 4.5 13 3.5C13 2.5 13.5 1.5 14 1C14.5 0.5 15.5 0 16.5 0C21 0 23 3.75 23 3.75Z"
+              fill="#FFD700"
+            />
+            <path
+              d="M14 6C14 6 16 8 16 10C16 12 14 14 14 14"
+              stroke="#FFA500"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
           </svg>
         );
       })}
@@ -45,200 +54,453 @@ function FlyingBirds({ count = 10 }) {
   );
 }
 
-// Génère des cœurs flottants lors du succès
+// Composant pour les cœurs flottants
 function FloatingHearts({ show }) {
-  const [hearts, setHearts] = useState([]);
-  useEffect(() => {
-    if (show) {
-      const newHearts = Array.from({ length: 8 }).map((_, i) => ({
-        left: 10 + Math.random() * 80,
-        delay: Math.random() * 0.8,
-        size: 18 + Math.random() * 22,
-        key: i + Math.random()
-      }));
-      setHearts(newHearts);
-    } else {
-      setHearts([]);
-    }
-  }, [show]);
   if (!show) return null;
+  
+  const hearts = Array.from({ length: 15 });
   return (
-    <div className="pointer-events-none fixed inset-0 z-50">
-      {hearts.map(({ left, delay, size, key }) => (
-        <svg
-          key={key}
-          className="absolute animate-heart"
-          style={{
-            left: `${left}%`,
-            bottom: '40px',
-            width: `${size}px`,
-            height: `${size * 0.9}px`,
-            animationDelay: `${delay}s`
-          }}
-          viewBox="0 0 40 36"
-          fill="none"
-        >
-          <path d="M20 33S2 20.5 2 11.5C2 6.253 6.253 2 11.5 2c3.037 0 5.77 1.617 7.5 4.09C20.73 3.617 23.463 2 26.5 2 31.747 2 36 6.253 36 11.5c0 9-18 21.5-18 21.5z" fill="#f8b195" stroke="#f59e42" strokeWidth="2"/>
-        </svg>
-      ))}
+    <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      {hearts.map((_, i) => {
+        const left = 10 + Math.random() * 80;
+        const duration = 2 + Math.random() * 3;
+        const delay = Math.random() * 2;
+        const size = 20 + Math.random() * 30;
+        const opacity = 0.6 + Math.random() * 0.4;
+        
+        return (
+          <div
+            key={i}
+            className="absolute text-pink-500 animate-float"
+            style={{
+              left: `${left}%`,
+              bottom: '0',
+              fontSize: `${size}px`,
+              animationDuration: `${duration}s`,
+              animationDelay: `${delay}s`,
+              opacity,
+              transform: 'translateY(100%)'
+            }}
+          >
+            ❤️
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 export default function Home() {
-  const [confirmation, setConfirmation] = useState(false);
-  const [fileList, setFileList] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const fileInput = useRef();
+  const [files, setFiles] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState(null);
+  const fileInputRef = useRef(null);
+  const dropZoneRef = useRef(null);
 
-  const handleFiles = (files) => {
-    setFileList(Array.from(files));
-    uploadFiles(files);
+  // Récupère les paramètres d'authentification depuis le serveur
+  const getAuthParams = async () => {
+    try {
+      console.log('Tentative de récupération des paramètres d\'authentification depuis:', AUTH_ENDPOINT);
+      const response = await fetch(AUTH_ENDPOINT, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-cache'
+      });
+      
+      console.log('Réponse du serveur:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Erreur de réponse:', errorText);
+        throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Paramètres d\'authentification reçus:', data);
+      return data;
+      
+    } catch (error) {
+      console.error('Erreur lors de la récupération des paramètres d\'authentification:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      throw new Error(`Impossible de se connecter au serveur d'authentification: ${error.message}`);
+    }
+  };
+
+  // Crée un objet FormData pour l'upload
+  const createFormData = async (file) => {
+    const authParams = await getAuthParams();
+    const formData = new FormData();
+    
+    // Ajout des paramètres d'authentification
+    Object.keys(authParams).forEach(key => {
+      formData.append(key, authParams[key]);
+    });
+    
+    // Ajout des paramètres du fichier
+    formData.append('file', file);
+    formData.append('fileName', `${FOLDER_NAME}/${Date.now()}-${file.name}`);
+    formData.append('useUniqueFileName', 'true');
+    formData.append('folder', FOLDER_NAME);
+    
+    return formData;
+  };
+
+  // Gestion du glisser-déposer
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.dataTransfer.files.length > 0) {
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
     }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Gestion de la sélection de fichiers
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+    }
   };
 
-  async function uploadFiles(files) {
-    setUploading(true);
-    setProgress(0);
+  const handleFiles = (fileList) => {
+    const newFiles = Array.from(fileList).map(file => ({
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      preview: URL.createObjectURL(file),
+      status: 'pending',
+      progress: 0
+    }));
+    
+    setFiles(prevFiles => [...prevFiles, ...newFiles]);
+    uploadFiles(newFiles);
+  };
+
+  // Téléverse les fichiers vers ImageKit
+  const uploadFiles = async (filesToUpload) => {
+    setIsUploading(true);
+    setError(null);
+    
     try {
-      // 1. Obtenir la signature du backend
-      const authResponse = await fetch("/api/auth");
-      if (!authResponse.ok) {
-        throw new Error(`Erreur d'authentification: ${authResponse.statusText}`);
-      }
-      const { signature, expire, token } = await authResponse.json();
-
-      const filesArray = Array.from(files);
-      let totalUploaded = 0;
-
-      for (const file of filesArray) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("fileName", file.name);
-        formData.append("publicKey", "public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=");
-        formData.append("signature", signature);
-        formData.append("expire", expire);
-        formData.append("token", token);
-
-        const uploadResponse = await fetch(
-          "https://upload.imagekit.io/api/v1/files/upload",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        if (!uploadResponse.ok) {
-          continue;
+      for (const file of filesToUpload) {
+        try {
+          const formData = await createFormData(file.file);
+          await uploadFile(formData, file);
+        } catch (error) {
+          console.error('Erreur lors de l\'upload:', error);
+          setFiles(prevFiles => 
+            prevFiles.map(f => 
+              f.preview === file.preview 
+                ? { ...f, status: 'error', error: error.message }
+                : f
+            )
+          );
         }
-        totalUploaded++;
-        setProgress(Math.round(((totalUploaded) / filesArray.length) * 100));
       }
-      setUploading(false);
-      setConfirmation(true);
-      setFileList([]);
+      
+      // Afficher le message de succès
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 5000);
+      
     } catch (error) {
-      setUploading(false);
-      alert("Erreur lors de l'envoi des fichiers. Veuillez réessayer.");
+      console.error('Erreur lors du traitement des fichiers:', error);
+      setError('Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.');
+    } finally {
+      setIsUploading(false);
     }
-  }
+  };
+
+  // Téléverse un seul fichier
+  const uploadFile = (formData, fileInfo) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setFiles(prevFiles => 
+            prevFiles.map(f => 
+              f.preview === fileInfo.preview 
+                ? { ...f, progress, status: 'uploading' }
+                : f
+            )
+          );
+        }
+      };
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setFiles(prevFiles => 
+            prevFiles.map(f => 
+              f.preview === fileInfo.preview 
+                ? { ...f, status: 'done', progress: 100 }
+                : f
+            )
+          );
+          resolve(xhr.response);
+        } else {
+          const error = new Error(`Erreur HTTP ${xhr.status}`);
+          error.status = xhr.status;
+          reject(error);
+        }
+      };
+      
+      xhr.onerror = () => {
+        reject(new Error('Erreur réseau lors de l\'upload'));
+      };
+      
+      xhr.open('POST', UPLOAD_URL, true);
+      xhr.send(formData);
+    });
+  };
+
+  // Formatage de la taille des fichiers
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Nettoyage des URLs de prévisualisation
+  useEffect(() => {
+    return () => {
+      files.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, [files]);
 
   return (
-    <>
-      <FlyingBirds count={12} />
-      <main className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <section className="bg-white/90 backdrop-blur-lg shadow-2xl shadow-orange-200/60 rounded-3xl w-full max-w-2xl p-8 md:p-14 text-center border border-amber-200/80 ring-2 ring-orange-100/60">
-          {/* Carte prénoms */}
-          <header className="mb-10">
-            <div className="inline-block px-8 py-5 rounded-2xl shadow-lg bg-gradient-to-br from-orange-50/90 to-amber-100/80 border border-amber-200/70 relative">
-              <h1 className="text-[2.5rem] md:text-[3.5rem] font-[Parisienne,cursive] text-orange-600 drop-shadow-sm flex flex-col items-center leading-tight">
-                <span className="tracking-wide">Lidye</span>
-                <span className="text-4xl md:text-5xl text-amber-400 my-1 drop-shadow-lg">&amp;</span>
-                <span className="tracking-wide">Jean-Philippe</span>
-              </h1>
-              {/* Séparateur floral */}
-              <svg className="mx-auto mt-2" width="80" height="18" viewBox="0 0 80 18" fill="none"><path d="M5 9 Q15 0 40 9 Q65 18 75 9" stroke="#F59E42" strokeWidth="2" fill="none"/><circle cx="40" cy="9" r="3" fill="#f8b195"/></svg>
-            </div>
-            <h2 className="mt-8 text-[2rem] md:text-[2.5rem] font-[Parisienne,cursive] text-orange-400">Partagez vos souvenirs</h2>
-            <p className="mt-2 text-lg text-orange-900/80 italic font-normal">Déposez ici vos plus beaux moments de bonheur partagé</p>
-          </header>
-          {!confirmation ? (
-            <form
-              className="space-y-7"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (fileInput.current.files.length > 0) {
-                  handleFiles(fileInput.current.files);
-                }
-              }}
-            >
-              {/* Zone de drag & drop */}
-              <div
-                id="drop-zone"
-                className="drop-zone group rounded-2xl p-12 cursor-pointer border-2 border-dashed border-orange-300 bg-gradient-to-br from-orange-50 via-amber-50 to-white shadow-inner shadow-orange-100/40 transition hover:scale-105 hover:shadow-amber-200/70 relative overflow-hidden"
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onClick={() => fileInput.current.click()}
-              >
-                {/* Halo lumineux */}
-                <div className="absolute inset-0 pointer-events-none bg-gradient-radial from-amber-100/80 via-orange-50/70 to-transparent opacity-70" />
-                <div className="flex flex-col items-center justify-center space-y-4 relative z-10">
-                  {/* Icône photo abricot */}
-                  <svg className="w-16 h-16 text-orange-300 group-hover:text-orange-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                  <p className="text-orange-800/80 font-medium">Glissez & déposez vos photos ici</p>
-                  <p className="text-sm text-orange-400">ou</p>
-                  <button type="button" className="bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 text-white font-semibold px-10 py-3 rounded-full border-2 border-amber-200 shadow-lg hover:from-orange-500 hover:to-amber-600 hover:shadow-orange-300/70 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-300" onClick={(e) => {e.preventDefault(); fileInput.current.click();}}>Choisir des fichiers</button>
-                </div>
-                <input
-                  type="file"
-                  ref={fileInput}
-                  className="hidden"
-                  multiple
-                  accept="image/png, image/jpeg, image/gif, image/heic"
-                  onChange={(e) => handleFiles(e.target.files)}
-                />
-              </div>
-              {/* Liste des fichiers */}
-              {fileList.length > 0 && (
-                <div className="text-left mt-4">
-                  <ul className="list-disc list-inside text-orange-700/80">
-                    {fileList.map((file, idx) => (
-                      <li key={idx}>{file.name} <span className="text-xs">({(file.size / 1024 / 1024).toFixed(2)} MB)</span></li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {/* Barre de progression */}
-              {uploading && (
-                <div className="mt-4 w-full bg-orange-100 rounded-full h-2.5">
-                  <div className="bg-gradient-to-r from-orange-400 to-amber-400 h-2.5 rounded-full transition-all duration-200" style={{ width: `${progress}%` }}></div>
-                </div>
-              )}
-            </form>
-          ) : (
-            <div className="mt-10 p-10 bg-gradient-to-br from-orange-50 via-amber-100 to-orange-100 border border-orange-200 text-orange-800 rounded-2xl shadow-inner shadow-orange-200/50 relative">
-              {/* Cœur stylisé */}
-              <svg className="mx-auto mb-2" width="40" height="36" viewBox="0 0 40 36" fill="none"><path d="M20 33S2 20.5 2 11.5C2 6.253 6.253 2 11.5 2c3.037 0 5.77 1.617 7.5 4.09C20.73 3.617 23.463 2 26.5 2 31.747 2 36 6.253 36 11.5c0 9-18 21.5-18 21.5z" fill="#f8b195" stroke="#f59e42" strokeWidth="2"/></svg>
-              <h2 className="text-2xl md:text-3xl font-[Parisienne,cursive] text-orange-600">Merci !</h2>
-              <p className="mt-2 text-lg font-[Cormorant Garamond,serif] text-orange-900/80">Vos photos ont bien été envoyées.<br />Nous avons hâte de les découvrir !</p>
-            </div>
-          )}
-        </section>
-      </main>
-    </>
+    <div className="min-h-screen bg-gradient-to-b from-white to-pink-50">
+      <Head>
+        <title>Partage de photos - Mariage de Jean-Philippe & Lydia</title>
+        <meta name="description" content="Partagez vos plus beaux moments de notre mariage" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
 
+      <FlyingBirds count={8} />
+      <FloatingHearts show={showSuccess} />
+
+      <main className="container mx-auto px-4 py-12 max-w-4xl">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-cursive text-pink-600 mb-4">
+            Partagez vos plus beaux moments
+          </h1>
+          <p className="text-xl text-gray-600">
+            Téléchargez vos photos préférées de notre journée de mariage
+          </p>
+        </div>
+
+        {/* Zone de dépôt */}
+        <div
+          ref={dropZoneRef}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
+            isDragging ? 'border-pink-400 bg-pink-50' : 'border-pink-200 hover:border-pink-300'
+          } mb-8`}
+        >
+          <div className="max-w-md mx-auto">
+            <svg
+              className="w-16 h-16 mx-auto text-pink-400 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              ></path>
+            </svg>
+            <h2 className="text-xl font-medium text-gray-700 mb-2">
+              {isDragging ? 'Déposez vos photos ici' : 'Glissez-déposez vos photos ici'}
+            </h2>
+            <p className="text-gray-500 mb-4">ou</p>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-6 py-2 bg-pink-600 text-white rounded-full hover:bg-pink-700 transition-colors focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+            >
+              Sélectionner des fichiers
+            </button>
+            <p className="text-sm text-gray-500 mt-3">
+              Formats acceptés : JPG, PNG, HEIC (max 10 Mo par fichier)
+            </p>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/heic"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        </div>
+
+        {/* Liste des fichiers */}
+        {files.length > 0 && (
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-800">
+                {files.length} {files.length === 1 ? 'fichier sélectionné' : 'fichiers sélectionnés'}
+              </h2>
+            </div>
+            <ul className="divide-y divide-gray-200">
+              {files.map((file, index) => (
+                <li key={index} className="p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-12 w-12 rounded-md overflow-hidden bg-gray-100">
+                      {file.preview && (
+                        <img
+                          src={file.preview}
+                          alt={file.name}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="ml-4 flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatFileSize(file.size)}
+                      </p>
+                      {file.status === 'uploading' && (
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                          <div
+                            className="bg-pink-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${file.progress}%` }}
+                          ></div>
+                        </div>
+                      )}
+                      {file.status === 'done' && (
+                        <p className="text-sm text-green-600 mt-1">
+                          ✓ Téléversement réussi
+                        </p>
+                      )}
+                      {file.status === 'error' && (
+                        <p className="text-sm text-red-600 mt-1">
+                          ✗ Erreur: {file.error || 'Échec du téléversement'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
+              <button
+                type="button"
+                onClick={() => uploadFiles(files.filter(f => f.status !== 'done'))}
+                disabled={isUploading || files.every(f => f.status === 'done')}
+                className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
+                  isUploading || files.every(f => f.status === 'done')
+                    ? 'bg-pink-300 cursor-not-allowed'
+                    : 'bg-pink-600 hover:bg-pink-700'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500`}
+              >
+                {isUploading ? 'Téléversement en cours...' : 'Téléverser les fichiers'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Message de succès */}
+        {showSuccess && (
+          <div className="fixed bottom-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            <p>Vos photos ont été téléversées avec succès ! Merci pour votre partage.</p>
+          </div>
+        )}
+
+        {/* Message d'erreur */}
+        {error && (
+          <div className="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <p>{error}</p>
+            <button 
+              onClick={() => setError(null)}
+              className="font-bold float-right"
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </main>
+
+      <style jsx global>{`
+        @keyframes flyAcross {
+          0% {
+            transform: translateX(-100px) scaleX(var(--direction, 1));
+          }
+          100% {
+            transform: translateX(calc(100vw + 100px)) scaleX(var(--direction, 1));
+          }
+        }
+        
+        @keyframes float {
+          0% {
+            transform: translateY(100%) translateX(0);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.8;
+          }
+          90% {
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(-100vh) translateX(20px);
+            opacity: 0;
+          }
+        }
+        
+        .animate-flyAcross {
+          animation: flyAcross 20s linear infinite;
+          --direction: 1;
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out forwards;
+        }
+        
+        .font-cursive {
+          font-family: 'Parisienne', cursive;
+        }
+      `}</style>
+    </div>
   );
 }
