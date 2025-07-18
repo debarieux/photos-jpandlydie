@@ -1,10 +1,20 @@
 import { useRef, useState, useEffect } from 'react';
 import Head from 'next/head';
+import ImageKit from 'imagekit-javascript';
 
 // Configuration d'ImageKit.io
-const UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload';
 const FOLDER_NAME = 'mariage-jp-lydie';
 const AUTH_ENDPOINT = '/api/auth';
+const IMAGEKIT_ID = 'mvhberuj5';
+const IMAGEKIT_PUBLIC_KEY = 'public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=';
+const IMAGEKIT_URL_ENDPOINT = 'https://ik.imagekit.io/mvhberuj5';
+
+// Initialisation du client ImageKit
+const imagekit = new ImageKit({
+  publicKey: IMAGEKIT_PUBLIC_KEY,
+  urlEndpoint: IMAGEKIT_URL_ENDPOINT,
+  authenticationEndpoint: AUTH_ENDPOINT
+});
 
 // Composant pour les oiseaux volants
 function FlyingBirds({ count = 10 }) {
@@ -211,14 +221,49 @@ export default function Home() {
     try {
       for (const file of filesToUpload) {
         try {
-          const formData = await createFormData(file.file);
-          await uploadFile(formData, file);
+          // Utilisation du SDK ImageKit pour l'upload
+          const result = await new Promise((resolve, reject) => {
+            imagekit.upload({
+              file: file.file,
+              fileName: `${Date.now()}-${file.name}`,
+              folder: FOLDER_NAME,
+              tags: ['mariage']
+            }, (err, result) => {
+              if (err) {
+                console.error('Erreur d\'upload ImageKit:', err);
+                reject(err);
+              } else {
+                console.log('Upload réussi:', result);
+                resolve(result);
+              }
+            });
+          });
+          
+          // Mise à jour de l'état avec le résultat de l'upload
+          setFiles(prevFiles => 
+            prevFiles.map(f => 
+              f.preview === file.preview 
+                ? { 
+                    ...f, 
+                    status: 'done', 
+                    progress: 100,
+                    url: result.url,
+                    fileId: result.fileId
+                  }
+                : f
+            )
+          );
+          
         } catch (error) {
           console.error('Erreur lors de l\'upload:', error);
           setFiles(prevFiles => 
             prevFiles.map(f => 
               f.preview === file.preview 
-                ? { ...f, status: 'error', error: error.message }
+                ? { 
+                    ...f, 
+                    status: 'error', 
+                    error: error.message || 'Échec du téléversement'
+                  }
                 : f
             )
           );
@@ -237,48 +282,15 @@ export default function Home() {
     }
   };
 
-  // Téléverse un seul fichier
-  const uploadFile = (formData, fileInfo) => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          setFiles(prevFiles => 
-            prevFiles.map(f => 
-              f.preview === fileInfo.preview 
-                ? { ...f, progress, status: 'uploading' }
-                : f
-            )
-          );
-        }
-      };
-      
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setFiles(prevFiles => 
-            prevFiles.map(f => 
-              f.preview === fileInfo.preview 
-                ? { ...f, status: 'done', progress: 100 }
-                : f
-            )
-          );
-          resolve(xhr.response);
-        } else {
-          const error = new Error(`Erreur HTTP ${xhr.status}`);
-          error.status = xhr.status;
-          reject(error);
-        }
-      };
-      
-      xhr.onerror = () => {
-        reject(new Error('Erreur réseau lors de l\'upload'));
-      };
-      
-      xhr.open('POST', UPLOAD_URL, true);
-      xhr.send(formData);
-    });
+  // Suivi de la progression de l'upload
+  const trackProgress = (filePreview, progress) => {
+    setFiles(prevFiles => 
+      prevFiles.map(f => 
+        f.preview === filePreview 
+          ? { ...f, progress, status: 'uploading' }
+          : f
+      )
+    );
   };
 
   // Formatage de la taille des fichiers
