@@ -10,6 +10,14 @@
       "use": "@vercel/static"
     },
     {
+      "src": "styles/globals.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "pages/**/*.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "404.html",
       "use": "@vercel/static"
     }
