@@ -87,6 +87,11 @@ function Home() {
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      // Vérification spécifique pour mobile
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        setError('Sur mobile, veuillez utiliser le bouton "Sélectionner des fichiers"');
+        return;
+      }
       handleFiles(e.dataTransfer.files);
     }
   };
@@ -99,15 +104,21 @@ function Home() {
   };
 
   const handleFiles = (fileList) => {
-    const newFiles = Array.from(fileList).map(file => ({
-      file,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      preview: URL.createObjectURL(file),
-      status: 'pending',
-      progress: 0
-    }));
+    const newFiles = Array.from(fileList)
+      .filter(file => {
+        // Filtre les types MIME pour mobiles (HEIC, etc.)
+        const validTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif'];
+        return validTypes.includes(file.type);
+      })
+      .map(file => ({
+        file,
+        name: file.name,
+        size: file.size,
+        type: file.type.includes('heic') ? 'image/jpeg' : file.type, // Normalise le type
+        preview: URL.createObjectURL(file),
+        status: 'pending',
+        progress: 0
+      }));
     
     setFiles(prevFiles => [...prevFiles, ...newFiles]);
     uploadFiles(newFiles);
@@ -287,8 +298,13 @@ function Home() {
                 type="file"
                 accept="image/jpeg,image/png,image/heic"
                 multiple
+                capture="environment" // Permet d'utiliser l'appareil photo directement sur mobile
                 className="hidden"
                 onChange={handleFileSelect}
+                onClick={(e) => {
+                  // Réinitialise la valeur pour permettre la sélection du même fichier
+                  e.target.value = null;
+                }}
               />
             </div>
           </div>
