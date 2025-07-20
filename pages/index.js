@@ -298,7 +298,6 @@ function Home() {
                 type="file"
                 accept="image/jpeg,image/png,image/heic"
                 multiple
-                capture="environment" // Permet d'utiliser l'appareil photo directement sur mobile
                 className="hidden"
                 onChange={handleFileSelect}
                 onClick={(e) => {
