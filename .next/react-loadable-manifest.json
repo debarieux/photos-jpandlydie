@@ -1,1 +1,8 @@
-{}
+{
+  "index.js -> ../components/FlyingBirds": {
+    "id": "index.js -> ../components/FlyingBirds",
+    "files": [
+      "static/chunks/components_FlyingBirds_js.js"
+    ]
+  }
+}

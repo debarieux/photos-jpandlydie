@@ -10,12 +10,13 @@
     "lint:fix": "next lint --fix",
     "type-check": "tsc --pretty --noEmit",
     "vercel-build": "next build",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "backup": "node scripts/backupAttachments.js"
   },
   "dependencies": {
-    "imagekit": "^4.1.3",
-    "imagekit-javascript": "^4.0.1",
+    "googleapis": "^120.0.0",
     "next": "^13.4.19",
+    "nodemailer": "^7.0.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

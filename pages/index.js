@@ -1,70 +1,23 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import Image from 'next/image';
-import ImageKit from 'imagekit-javascript';
 
-// Configuration d'ImageKit.io
-const FOLDER_NAME = 'mariage-jp-lydie';
-
-// Les clés sont maintenant gérées via les variables d'environnement
-const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || 'public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=';
-const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/mvhberuj5';
-
-// Fonction pour initialiser ImageKit sans authentification
-const getImageKitClient = () => {
-  return new ImageKit({
-    publicKey: IMAGEKIT_PUBLIC_KEY,
-    urlEndpoint: IMAGEKIT_URL_ENDPOINT
+// Fonction pour convertir un fichier en base64
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
   });
 };
 
-// Composant pour les oiseaux volants
-function FlyingBirds({ count = 10 }) {
-  const birds = Array.from({ length: count });
-  return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      {birds.map((_, i) => {
-        const top = 10 + Math.random() * 80;
-        const duration = 12 + Math.random() * 8;
-        const delay = Math.random() * 10;
-        const size = 25 + Math.random() * 20;
-        const opacity = 0.6 + Math.random() * 0.4;
-        const direction = Math.random() > 0.5 ? 1 : -1;
-
-        return (
-          <svg
-            key={i}
-            className="absolute animate-flyAcross"
-            style={{
-              top: `${top}%`,
-              left: direction > 0 ? '-50px' : '105vw',
-              width: `${size}px`,
-              height: 'auto',
-              animationDuration: `${duration}s`,
-              animationDelay: `${delay}s`,
-              opacity,
-              transform: `scaleX(${direction})`
-            }}
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M23 3.75C23 3.75 21 7 16.5 7C15.5 7 14.5 6.5 14 6C13.5 5.5 13 4.5 13 3.5C13 2.5 13.5 1.5 14 1C14.5 0.5 15.5 0 16.5 0C21 0 23 3.75 23 3.75Z"
-              fill="#FFD700"
-            />
-            <path
-              d="M14 6C14 6 16 8 16 10C16 12 14 14 14 14"
-              stroke="#FFA500"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        );
-      })}
-    </div>
-  );
-}
+// Composant pour les oiseaux volants (chargé uniquement côté client)
+const FlyingBirds = dynamic(
+  () => import('../components/FlyingBirds'),
+  { ssr: false }
+);
 
 // Composant pour les cœurs flottants
 function FloatingHearts({ show }) {
@@ -114,17 +67,17 @@ function Home() {
 
 
   // Gestion du glisser-déposer
-  const handleDragOver = (e) => {
+  const handleDragOver = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
-  };
+    if (!isDragging) setIsDragging(true);
+  }, [isDragging]);
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-  };
+  }, []);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -158,128 +111,62 @@ function Home() {
     uploadFiles(newFiles);
   };
 
-  // Crée le dossier s'il n'existe pas dans ImageKit
-  const ensureFolderExists = async (folderName) => {
-    try {
-      // Vérifie d'abord si le dossier existe
-      const checkResponse = await fetch(`${IMAGEKIT_URL_ENDPOINT}/api/v1/files?path=${folderName}`, {
-        headers: {
-          'Authorization': `Basic ${btoa(`${IMAGEKIT_PUBLIC_KEY}:`)}`
-        }
-      });
-      
-      if (!checkResponse.ok) {
-        // Crée le dossier s'il n'existe pas
-        const createResponse = await fetch(`${IMAGEKIT_URL_ENDPOINT}/api/v1/folder`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${btoa(`${IMAGEKIT_PUBLIC_KEY}:`)}`
-          },
-          body: JSON.stringify({
-            folderName: folderName,
-            parentFolderPath: '/'
-          })
-        });
-        
-        if (!createResponse.ok) {
-          throw new Error('Échec de la création du dossier');
-        }
-        console.log('Dossier créé avec succès:', folderName);
-      }
-      return true;
-    } catch (error) {
-      console.error('Erreur lors de la gestion du dossier:', error);
-      throw error;
-    }
-  };
-
-  // Téléverse les fichiers vers ImageKit sans authentification
+  // Envoie les fichiers par email via l'API
   const uploadFiles = async (filesToUpload) => {
     setIsUploading(true);
     setError(null);
     
     try {
-      // S'assurer que le dossier existe
-      await ensureFolderExists(FOLDER_NAME);
+      // Convertir les fichiers en base64
+      const filesWithBase64 = await Promise.all(
+        filesToUpload.map(async (file) => ({
+          ...file,
+          base64: await fileToBase64(file.file)
+        }))
+      );
 
-      // Initialiser ImageKit sans authentification
-      const imagekit = getImageKitClient();
-      
-      // Téléverser chaque fichier
-      for (const file of filesToUpload) {
-        try {
-          // Utilisation du SDK ImageKit pour l'upload avec authentification
-          const result = await new Promise((resolve, reject) => {
-            imagekit.upload({
-              file: file.file,
-              fileName: `${Date.now()}-${file.name}`,
-              folder: FOLDER_NAME,
-              tags: ['mariage'],
-              useUniqueFileName: true
-            }, (err, result) => {
-              if (err) {
-                console.error('Erreur d\'upload ImageKit:', {
-                  message: err.message,
-                  stack: err.stack,
-                  response: err.response ? err.response.data : null
-                });
-                reject(err);
-              } else {
-                console.log('Upload réussi - Détails:', {
-                  fileId: result.fileId,
-                  url: result.url,
-                  filePath: result.filePath,
-                  thumbnailUrl: result.thumbnailUrl,
-                  name: result.name,
-                  size: result.size,
-                  fileType: result.fileType,
-                  height: result.height,
-                  width: result.width
-                });
-                resolve(result);
-              }
-            });
-          });
-          
-          // Mise à jour de l'état avec le résultat de l'upload
-          setFiles(prevFiles => 
-            prevFiles.map(f => 
-              f.preview === file.preview 
-                ? { 
-                    ...f, 
-                    status: 'done', 
-                    progress: 100,
-                    url: result.url,
-                    fileId: result.fileId
-                  }
-                : f
-            )
-          );
-          
-        } catch (error) {
-          console.error('Erreur lors de l\'upload:', error);
-          setFiles(prevFiles => 
-            prevFiles.map(f => 
-              f.preview === file.preview 
-                ? { 
-                    ...f, 
-                    status: 'error', 
-                    error: error.message || 'Échec du téléversement'
-                  }
-                : f
-            )
-          );
-        }
+      // Envoyer les fichiers à l'API
+      const response = await fetch('/api/sendEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: filesWithBase64.map(({ name, type, base64 }) => ({
+            name,
+            type,
+            base64
+          }))
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'envoi des fichiers');
       }
-      
+
+      // Mise à jour de l'état
+      setFiles(prevFiles => 
+        prevFiles.map(f => 
+          filesToUpload.some(uploaded => uploaded.preview === f.preview)
+            ? { ...f, status: 'done', progress: 100 }
+            : f
+        )
+      );
+
       // Afficher le message de succès
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
       
     } catch (error) {
-      console.error('Erreur lors du traitement des fichiers:', error);
-      setError('Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.');
+      console.error('Erreur lors de l\'envoi des fichiers:', error);
+      setFiles(prevFiles => 
+        prevFiles.map(f => 
+          filesToUpload.some(uploaded => uploaded.preview === f.preview)
+            ? { ...f, status: 'error', error: error.message }
+            : f
+        )
+      );
+      setError('Une erreur est survenue lors de l\'envoi des fichiers. Veuillez réessayer.');
     } finally {
       setIsUploading(false);
     }
@@ -419,14 +306,15 @@ function Home() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden bg-warm-100 border border-apricot-100">
                           {file.preview && (
-                            <Image
-                              src={file.preview}
-                              alt={file.name}
-                              className="h-full w-full object-cover"
-                              width={56}
-                              height={56}
-                              unoptimized
-                            />
+                            <div className="h-full w-full relative">
+                              <Image
+                                src={file.preview}
+                                alt={file.name}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
                           )}
                         </div>
                         <div className="ml-4 flex-1 min-w-0">
