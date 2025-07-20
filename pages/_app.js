@@ -16,9 +16,6 @@ export default function MyApp({ Component, pageProps }) {
       <Head>
         <title>Mariage Lydie & Jean-Philippe</title>
         <meta name="description" content="Partagez vos plus beaux moments de notre mariage" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet" />
       </Head>
       <Component {...pageProps} />
     </>

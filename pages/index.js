@@ -1,20 +1,22 @@
 import { useRef, useState, useEffect } from 'react';
 import Head from 'next/head';
+import Image from 'next/image';
 import ImageKit from 'imagekit-javascript';
 
 // Configuration d'ImageKit.io
 const FOLDER_NAME = 'mariage-jp-lydie';
-const AUTH_ENDPOINT = '/api/auth';
-const IMAGEKIT_ID = 'mvhberuj5';
-const IMAGEKIT_PUBLIC_KEY = 'public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=';
-const IMAGEKIT_URL_ENDPOINT = 'https://ik.imagekit.io/mvhberuj5';
 
-// Initialisation du client ImageKit
-const imagekit = new ImageKit({
-  publicKey: IMAGEKIT_PUBLIC_KEY,
-  urlEndpoint: IMAGEKIT_URL_ENDPOINT,
-  authenticationEndpoint: AUTH_ENDPOINT
-});
+// Les clés sont maintenant gérées via les variables d'environnement
+const IMAGEKIT_PUBLIC_KEY = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || 'public_GsdYxjQC21Ltg6Yn3DIxNDAPwZ8=';
+const IMAGEKIT_URL_ENDPOINT = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/mvhberuj5';
+
+// Fonction pour initialiser ImageKit sans authentification
+const getImageKitClient = () => {
+  return new ImageKit({
+    publicKey: IMAGEKIT_PUBLIC_KEY,
+    urlEndpoint: IMAGEKIT_URL_ENDPOINT
+  });
+};
 
 // Composant pour les oiseaux volants
 function FlyingBirds({ count = 10 }) {
@@ -110,63 +112,6 @@ function Home() {
   const fileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
 
-  // Récupère les paramètres d'authentification depuis le serveur
-  const getAuthParams = async () => {
-    try {
-      console.log('Tentative de récupération des paramètres d\'authentification depuis:', AUTH_ENDPOINT);
-      const response = await fetch(AUTH_ENDPOINT, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-cache'
-      });
-      
-      console.log('Réponse du serveur:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur de réponse:', errorText);
-        throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Paramètres d\'authentification reçus:', data);
-      return data;
-      
-    } catch (error) {
-      console.error('Erreur lors de la récupération des paramètres d\'authentification:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-      throw new Error(`Impossible de se connecter au serveur d'authentification: ${error.message}`);
-    }
-  };
-
-  // Crée un objet FormData pour l'upload
-  const createFormData = async (file) => {
-    const authParams = await getAuthParams();
-    const formData = new FormData();
-    
-    // Ajout des paramètres d'authentification
-    Object.keys(authParams).forEach(key => {
-      formData.append(key, authParams[key]);
-    });
-    
-    // Ajout des paramètres du fichier
-    formData.append('file', file);
-    formData.append('fileName', `${FOLDER_NAME}/${Date.now()}-${file.name}`);
-    formData.append('useUniqueFileName', 'true');
-    formData.append('folder', FOLDER_NAME);
-    
-    return formData;
-  };
 
   // Gestion du glisser-déposer
   const handleDragOver = (e) => {
@@ -213,27 +158,85 @@ function Home() {
     uploadFiles(newFiles);
   };
 
-  // Téléverse les fichiers vers ImageKit
+  // Crée le dossier s'il n'existe pas dans ImageKit
+  const ensureFolderExists = async (folderName) => {
+    try {
+      // Vérifie d'abord si le dossier existe
+      const checkResponse = await fetch(`${IMAGEKIT_URL_ENDPOINT}/api/v1/files?path=${folderName}`, {
+        headers: {
+          'Authorization': `Basic ${btoa(`${IMAGEKIT_PUBLIC_KEY}:`)}`
+        }
+      });
+      
+      if (!checkResponse.ok) {
+        // Crée le dossier s'il n'existe pas
+        const createResponse = await fetch(`${IMAGEKIT_URL_ENDPOINT}/api/v1/folder`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${btoa(`${IMAGEKIT_PUBLIC_KEY}:`)}`
+          },
+          body: JSON.stringify({
+            folderName: folderName,
+            parentFolderPath: '/'
+          })
+        });
+        
+        if (!createResponse.ok) {
+          throw new Error('Échec de la création du dossier');
+        }
+        console.log('Dossier créé avec succès:', folderName);
+      }
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la gestion du dossier:', error);
+      throw error;
+    }
+  };
+
+  // Téléverse les fichiers vers ImageKit sans authentification
   const uploadFiles = async (filesToUpload) => {
     setIsUploading(true);
     setError(null);
     
     try {
+      // S'assurer que le dossier existe
+      await ensureFolderExists(FOLDER_NAME);
+
+      // Initialiser ImageKit sans authentification
+      const imagekit = getImageKitClient();
+      
+      // Téléverser chaque fichier
       for (const file of filesToUpload) {
         try {
-          // Utilisation du SDK ImageKit pour l'upload
+          // Utilisation du SDK ImageKit pour l'upload avec authentification
           const result = await new Promise((resolve, reject) => {
             imagekit.upload({
               file: file.file,
               fileName: `${Date.now()}-${file.name}`,
               folder: FOLDER_NAME,
-              tags: ['mariage']
+              tags: ['mariage'],
+              useUniqueFileName: true
             }, (err, result) => {
               if (err) {
-                console.error('Erreur d\'upload ImageKit:', err);
+                console.error('Erreur d\'upload ImageKit:', {
+                  message: err.message,
+                  stack: err.stack,
+                  response: err.response ? err.response.data : null
+                });
                 reject(err);
               } else {
-                console.log('Upload réussi:', result);
+                console.log('Upload réussi - Détails:', {
+                  fileId: result.fileId,
+                  url: result.url,
+                  filePath: result.filePath,
+                  thumbnailUrl: result.thumbnailUrl,
+                  name: result.name,
+                  size: result.size,
+                  fileType: result.fileType,
+                  height: result.height,
+                  width: result.width
+                });
                 resolve(result);
               }
             });
@@ -416,10 +419,13 @@ function Home() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-14 w-14 rounded-lg overflow-hidden bg-warm-100 border border-apricot-100">
                           {file.preview && (
-                            <img
+                            <Image
                               src={file.preview}
                               alt={file.name}
                               className="h-full w-full object-cover"
+                              width={56}
+                              height={56}
+                              unoptimized
                             />
                           )}
                         </div>

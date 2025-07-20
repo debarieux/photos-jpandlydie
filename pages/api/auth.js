@@ -16,45 +16,69 @@ const imagekit = new ImageKit({
   urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/mvhberuj5',
 });
 
+// Configuration des en-têtes CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json'
+};
+
 export default function handler(req, res) {
-  // Handle preflight requests
+  // Gestion des requêtes OPTIONS (preflight)
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    return res.status(200).end();
+    return res.status(200).setHeader('Access-Control-Allow-Origin', '*').end();
   }
 
-  // Only allow GET requests
+  // Seules les requêtes GET sont autorisées
   if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET', 'OPTIONS']);
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res
+      .status(405)
+      .setHeader('Allow', ['GET', 'OPTIONS'])
+      .json({ 
+        error: 'Method not allowed',
+        allowedMethods: ['GET', 'OPTIONS'] 
+      });
   }
 
   try {
-    // Generate authentication parameters
-    const authParams = imagekit.getAuthenticationParameters();
-    
-    // Log the authentication parameters (remove in production)
-    console.log('Generated auth params:', authParams);
-    
-    // Set CORS headers for the response
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Content-Type', 'application/json');
-    
-    // Return the authentication parameters
-    return res.status(200).json(authParams);
-    
-  } catch (error) {
-    console.error('Error generating authentication parameters:', error);
-    
-    // Set CORS headers for error response
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Content-Type', 'application/json');
-    
-    return res.status(500).json({ 
-      error: 'Failed to generate authentication parameters',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    // Vérification des variables d'environnement
+    if (!process.env.IMAGEKIT_PUBLIC_KEY || !process.env.IMAGEKIT_PRIVATE_KEY) {
+      console.error('Erreur: Clés ImageKit manquantes dans les variables d\'environnement');
+      return res.status(500).json({ 
+        error: 'Configuration serveur incomplète',
+        details: 'Les clés API ImageKit ne sont pas configurées correctement.'
+      });
+    }
+
+    // Génération des paramètres d'authentification
+    const authParams = imagekit.getAuthenticationParameters({
+      token: process.env.IMAGEKIT_TOKEN,
+      expire: process.env.IMAGEKIT_TOKEN_EXPIRE || (Math.floor(Date.now() / 1000) + 3600) // 1 heure d'expiration par défaut
     });
+    
+    console.log('Paramètres d\'authentification générés avec succès');
+    
+    // Retour des paramètres avec les en-têtes CORS
+    return res
+      .status(200)
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Content-Type', 'application/json')
+      .json(authParams);
+      
+  } catch (error) {
+    console.error('Erreur lors de la génération des paramètres d\'authentification:', {
+      message: error.message,
+      stack: error.stack
+    });
+    
+    return res
+      .status(500)
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Content-Type', 'application/json')
+      .json({
+        error: 'Erreur serveur',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
   }
 }
