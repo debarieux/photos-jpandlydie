@@ -25,7 +25,7 @@ function FloatingHearts({ show }) {
   
   const hearts = Array.from({ length: 15 });
   return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-50">
       {hearts.map((_, i) => {
         const left = 10 + Math.random() * 80;
         const duration = 2 + Math.random() * 3;
@@ -62,6 +62,8 @@ function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [senderName, setSenderName] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
   const fileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
 
@@ -117,7 +119,7 @@ function Home() {
     setError(null);
     
     try {
-      // Convertir les fichiers en base64
+      // Convertir les fichiers en base64 avant l'envoi
       const filesWithBase64 = await Promise.all(
         filesToUpload.map(async (file) => ({
           ...file,
@@ -136,27 +138,26 @@ function Home() {
             name,
             type,
             base64
-          }))
+          })),
+          senderName,
+          senderEmail
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'envoi des fichiers');
-      }
-
-      // Mise à jour de l'état
-      setFiles(prevFiles => 
-        prevFiles.map(f => 
-          filesToUpload.some(uploaded => uploaded.preview === f.preview)
-            ? { ...f, status: 'done', progress: 100 }
-            : f
-        )
-      );
-
-      // Afficher le message de succès
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
+      const data = await response.json();
       
+      if (response.ok) {
+        // Mise à jour de l'état
+        setFiles([]);
+        setSenderName('');
+        setSenderEmail('');
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 5000);
+      } else {
+        throw new Error(data.error || 'Échec de l\'envoi');
+      }
+      
+      return data;
     } catch (error) {
       console.error('Erreur lors de l\'envoi des fichiers:', error);
       setFiles(prevFiles => 
@@ -167,6 +168,7 @@ function Home() {
         )
       );
       setError('Une erreur est survenue lors de l\'envoi des fichiers. Veuillez réessayer.');
+      throw error;
     } finally {
       setIsUploading(false);
     }
